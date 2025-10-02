@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Markdown Docs Viewer</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #222;
+      --link: #0366d6;
+      --code-bg: #f6f8fa;
+      --sidebar-bg: #f0f2f5;
+      --border: #ddd;
+    }
+    body.dark {
+      --bg: #0d1117;
+      --text: #c9d1d9;
+      --link: #58a6ff;
+      --code-bg: #161b22;
+      --sidebar-bg: #161b22;
+      --border: #333;
+    }
+    body {
+      margin: 0; display: flex;
+      font-family: "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    aside {
+      width: 220px;
+      background: var(--sidebar-bg);
+      padding: 20px;
+      border-right: 1px solid var(--border);
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    aside h2 {
+      font-size: 16px;
+      margin-top: 0;
+    }
+    aside a {
+      display: block;
+      padding: 6px 8px;
+      margin: 4px 0;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    aside a:hover {
+      background: var(--code-bg);
+      color: var(--link);
+    }
+    main {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+    pre, code {
+      background: var(--code-bg);
+      font-family: monospace;
+      border-radius: 4px;
+    }
+    pre {
+      padding: 10px;
+      overflow-x: auto;
+    }
+    code {
+      padding: 2px 4px;
+    }
+    h1,h2,h3 { margin-top: 1.2em; }
+    #toggle {
+      margin-top: 20px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <h2>📑 Dokumen</h2>
+    <nav>
+      <a href="#" data-doc="intro.md">Pendahuluan</a>
+      <a href="#" data-doc="install.md">Instalasi</a>
+      <a href="#" data-doc="usage.md">Penggunaan</a>
+      <a href="#" data-doc="faq.md">FAQ</a>
+    </nav>
+    <button id="toggle">🌙 Dark Mode</button>
+  </aside>
+  <main>
+    <article id="content">Pilih dokumen dari sidebar...</article>
+  </main>
+
+  <!-- Marked.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    const content = document.getElementById("content");
+    const links = document.querySelectorAll("aside a");
+
+    function loadDoc(file) {
+      fetch(file)
+        .then(res => res.text())
+        .then(md => {
+          content.innerHTML = marked.parse(md);
+          location.hash = file; // update URL
+        })
+        .catch(() => {
+          content.innerHTML = `<p style="color:red">Gagal memuat ${file}</p>`;
+        });
+    }
+
+    // klik link sidebar
+    links.forEach(link => {
+      link.addEventListener("click", e => {
+        e.preventDefault();
+        loadDoc(link.dataset.doc);
+      });
+    });
+
+    // buka dokumen sesuai hash URL
+    if(location.hash){
+      loadDoc(location.hash.substring(1));
+    }
+
+    // dark mode toggle
+    const btn = document.getElementById("toggle");
+    btn.addEventListener("click", ()=>{
+      document.body.classList.toggle("dark");
+      btn.textContent = document.body.classList.contains("dark") ? "☀️ Light Mode" : "🌙 Dark Mode";
+    });
+  </script>
+</body>
+</html>
