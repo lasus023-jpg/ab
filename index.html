@@ -5,133 +5,104 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Markdown Docs Viewer</title>
   <style>
-    :root {
-      --bg: #ffffff;
-      --text: #222;
-      --link: #0366d6;
-      --code-bg: #f6f8fa;
-      --sidebar-bg: #f0f2f5;
-      --border: #ddd;
-    }
-    body.dark {
-      --bg: #0d1117;
-      --text: #c9d1d9;
-      --link: #58a6ff;
-      --code-bg: #161b22;
-      --sidebar-bg: #161b22;
-      --border: #333;
-    }
     body {
-      margin: 0; display: flex;
-      font-family: "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    aside {
-      width: 220px;
-      background: var(--sidebar-bg);
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
       padding: 20px;
-      border-right: 1px solid var(--border);
-      height: 100vh;
-      box-sizing: border-box;
+      line-height: 1.6;
+      background: #fff;
+      color: #222;
     }
-    aside h2 {
-      font-size: 16px;
-      margin-top: 0;
-    }
-    aside a {
-      display: block;
-      padding: 6px 8px;
-      margin: 4px 0;
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    aside a:hover {
-      background: var(--code-bg);
-      color: var(--link);
-    }
-    main {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto;
+    h1, h2, h3 {
+      margin-top: 1.2em;
     }
     pre, code {
-      background: var(--code-bg);
-      font-family: monospace;
+      background: #f4f4f4;
+      padding: 4px 6px;
       border-radius: 4px;
+      font-family: monospace;
     }
     pre {
-      padding: 10px;
+      padding: 12px;
       overflow-x: auto;
     }
-    code {
-      padding: 2px 4px;
+    a {
+      color: #0366d6;
     }
-    h1,h2,h3 { margin-top: 1.2em; }
-    #toggle {
-      margin-top: 20px;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
+    #topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 16px;
       border-radius: 6px;
-      background: transparent;
+    }
+    #topbar input {
+      width: 180px;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    #topbar button {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #eee;
       cursor: pointer;
-      width: 100%;
+    }
+    #topbar button:hover {
+      background: #ddd;
     }
   </style>
 </head>
 <body>
-  <aside>
-    <h2>📑 Dokumen</h2>
-    <nav>
-      <a href="#" data-doc="intro.md">Pendahuluan</a>
-      <a href="#" data-doc="install.md">Instalasi</a>
-      <a href="#" data-doc="usage.md">Penggunaan</a>
-      <a href="#" data-doc="faq.md">FAQ</a>
-    </nav>
-    <button id="toggle">🌙 Dark Mode</button>
-  </aside>
-  <main>
-    <article id="content">Pilih dokumen dari sidebar...</article>
-  </main>
+  <div id="topbar">
+    <div>📄 <strong>Markdown Docs</strong></div>
+    <div>
+      <input id="fileInput" placeholder="contoh: usage.md">
+      <button onclick="loadFromInput()">Buka</button>
+    </div>
+  </div>
 
-  <!-- Marked.js CDN -->
+  <main id="content" style="margin-top: 20px;">Memuat dokumen...</main>
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
+    // Username & Repo GitHub kamu
+    const USERNAME = "yourusername";
+    const REPO = "my-markdown-docs";
+
+    // Ambil parameter "file" dari URL
+    const params = new URLSearchParams(location.search);
+    const file = params.get("file") || "intro.md";
+
+    // Buat URL file raw GitHub otomatis
+    const docUrl = `https://raw.githubusercontent.com/${USERNAME}/${REPO}/main/${file}`;
+
     const content = document.getElementById("content");
-    const links = document.querySelectorAll("aside a");
 
-    function loadDoc(file) {
-      fetch(file)
-        .then(res => res.text())
-        .then(md => {
-          content.innerHTML = marked.parse(md);
-          location.hash = file; // update URL
-        })
-        .catch(() => {
-          content.innerHTML = `<p style="color:red">Gagal memuat ${file}</p>`;
-        });
-    }
-
-    // klik link sidebar
-    links.forEach(link => {
-      link.addEventListener("click", e => {
-        e.preventDefault();
-        loadDoc(link.dataset.doc);
+    fetch(docUrl)
+      .then(res => {
+        if (!res.ok) throw new Error("File tidak ditemukan");
+        return res.text();
+      })
+      .then(md => {
+        content.innerHTML = marked.parse(md);
+        document.title = file + " - Markdown Docs";
+      })
+      .catch(err => {
+        content.innerHTML = `<p style="color:red">❌ ${err.message}</p>`;
       });
-    });
 
-    // buka dokumen sesuai hash URL
-    if(location.hash){
-      loadDoc(location.hash.substring(1));
+    // Fungsi untuk memuat file baru dari input
+    function loadFromInput() {
+      const input = document.getElementById("fileInput").value.trim();
+      if (!input) return alert("Masukkan nama file, misalnya intro.md");
+      location.search = "?file=" + encodeURIComponent(input);
     }
-
-    // dark mode toggle
-    const btn = document.getElementById("toggle");
-    btn.addEventListener("click", ()=>{
-      document.body.classList.toggle("dark");
-      btn.textContent = document.body.classList.contains("dark") ? "☀️ Light Mode" : "🌙 Dark Mode";
-    });
   </script>
 </body>
 </html>
