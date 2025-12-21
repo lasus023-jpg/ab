@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Viewer - Tampil & Salin Isi File</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Library untuk Highlight Sintaks & Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+    <script>
+        // Konfigurasi Tailwind dengan mode gelap/terang
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        dark: '#1D2129',
+                        light: '#F2F3F5'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .file-card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .btn-salin-active {
+                @apply bg-secondary text-white;
+            }
+            .search-input-focus {
+                @apply ring-2 ring-primary/30 outline-none;
+            }
+            .theme-toggle-btn {
+                @apply w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300;
+            }
+        }
+    </style>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Transisi halus untuk perpindahan mode */
+        html {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Penyesuaian tampilan Markdown (mode terang) */
+        #fileContent.markdown-view.light h1, 
+        #fileContent.markdown-view.light h2, 
+        #fileContent.markdown-view.light h3 {
+            color: #1D2129;
+        }
+        #fileContent.markdown-view.light p, 
+        #fileContent.markdown-view.light li {
+            color: #4E5969;
+        }
+        #fileContent.markdown-view.light a {
+            color: #165DFF;
+        }
+        #fileContent.markdown-view.light blockquote {
+            color: #667085;
+            border-left-color: #36CFC9;
+        }
+        #fileContent.markdown-view.light code {
+            background: #F2F3F5;
+            color: #1D2129;
+        }
+
+        /* Penyesuaian tampilan Markdown (mode gelap) */
+        #fileContent.markdown-view.dark h1, 
+        #fileContent.markdown-view.dark h2, 
+        #fileContent.markdown-view.dark h3 {
+            color: #F2F3F5;
+        }
+        #fileContent.markdown-view.dark p, 
+        #fileContent.markdown-view.dark li {
+            color: #C9CDD4;
+        }
+        #fileContent.markdown-view.dark a {
+            color: #36CFC9;
+        }
+        #fileContent.markdown-view.dark blockquote {
+            color: #A0AEC0;
+            border-left-color: #165DFF;
+        }
+        #fileContent.markdown-view.dark code {
+            background: #2D3748;
+            color: #E2E8F0;
+        }
+
+        /* Umum: Tampilan Markdown */
+        #fileContent.markdown-view h1 { font-size: 1.8rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+        #fileContent.markdown-view h2 { font-size: 1.5rem; font-weight: 600; margin: 1.2rem 0 0.8rem; }
+        #fileContent.markdown-view h3 { font-size: 1.2rem; font-weight: 600; margin: 1rem 0 0.6rem; }
+        #fileContent.markdown-view p { margin: 0.8rem 0; line-height: 1.6; }
+        #fileContent.markdown-view ul, #fileContent.markdown-view ol { margin: 0.8rem 0 0.8rem 1.5rem; }
+        #fileContent.markdown-view li { margin: 0.4rem 0; }
+        #fileContent.markdown-view blockquote { padding-left: 0.8rem; margin: 0.8rem 0; }
+        #fileContent.markdown-view code { padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+        #fileContent.markdown-view pre { padding: 1rem; border-radius: 6px; margin: 1rem 0; overflow-x: auto; }
+        #fileContent.markdown-view pre code { padding: 0; }
+    </style>
+</head>
+<body class="font-inter bg-light text-dark min-h-screen dark:bg-dark dark:text-light transition-all duration-300">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 dark:bg-gray-800 dark:shadow-gray-700/30 transition-all duration-300">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-bold text-primary flex items-center">
+                <i class="fa fa-file-text-o mr-2"></i>
+                <span>File Viewer</span>
+            </h1>
+            
+            <!-- Fitur Pencarian File -->
+            <div class="w-full md:w-auto relative w-full max-w-md">
+                <input 
+                    type="text" 
+                    id="searchFileInput" 
+                    placeholder="Cari nama file atau tipe..." 
+                    class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-light transition-all focus:search-input-focus"
+                >
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Fitur Toggle Dark/Light Mode -->
+                <button id="themeToggleBtn" class="theme-toggle-btn bg-gray-200 dark:bg-gray-700 text-dark dark:text-light hover:bg-gray-300 dark:hover:bg-gray-600">
+                    <i id="themeIcon" class="fa fa-moon-o dark:hidden"></i>
+                    <i id="themeIconDark" class="fa fa-sun-o hidden dark:block"></i>
+                </button>
+                
+                <button id="backBtn" class="hidden items-center text-primary font-medium">
+                    <i class="fa fa-arrow-left mr-1"></i>
+                    <span>Kembali ke Daftar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Bagian 1: Daftar Link File -->
+        <section id="fileListSection" class="block">
+            <h2 class="text-[clamp(1rem,2.5vw,1.5rem)] font-semibold mb-6 text-center">Daftar File Tersedia</h2>
+            
+            <!-- Pesan Jika Tidak Ada File Ditemukan Saat Pencarian -->
+            <div id="noFileFound" class="hidden text-center py-12 text-gray-500 dark:text-gray-400">
+                <i class="fa fa-folder-open-o text-4xl mb-3"></i>
+                <p>Tidak ada file yang cocok dengan pencarianmu</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="fileGrid">
+                <!-- Kartu File (contoh) -->
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover dark:bg-gray-800 dark:shadow-gray-700/20 transition-all duration-300" data-file="contoh1.md" data-search="contoh1 md markdown panduan dasar">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-code-o text-2xl text-primary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Panduan Dasar MD</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">contoh1.md</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover dark:bg-gray-800 dark:shadow-gray-700/20 transition-all duration-300" data-file="contoh2.txt" data-search="contoh2 txt teks catatan harian">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-text-o text-2xl text-secondary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Catatan Harian</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">contoh2.txt</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover dark:bg-gray-800 dark:shadow-gray-700/20 transition-all duration-300" data-file="contoh3.md" data-search="contoh3 md markdown kode javascript html">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-code-o text-2xl text-primary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Contoh Kode di MD</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">contoh3.md</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover dark:bg-gray-800 dark:shadow-gray-700/20 transition-all duration-300" data-file="contoh4.txt" data-search="contoh4 txt teks daftar belanja">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-text-o text-2xl text-secondary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Daftar Belanja</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">contoh4.txt</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bagian 2: Tampilan Isi File -->
+        <section id="fileContentViewSection" class="hidden">
+            <div class="bg-white rounded-lg shadow p-6 mb-6 dark:bg-gray-800 dark:shadow-gray-700/20 transition-all duration-300">
+                <h2 id="fileNameDisplay" class="text-[clamp(1rem,2.5vw,1.5rem)] font-semibold mb-4"></h2>
+                <div class="flex flex-col sm:flex-row sm:justify-end gap-3 mb-4">
+                    <span id="fileTypeBadge" class="inline-block px-3 py-1 rounded-full text-sm font-medium"></span>
+                    <button id="copyBtn" class="flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-dark dark:text-light py-2 px-4 rounded-md font-medium transition-colors hover:bg-gray-300 dark:hover:bg-gray-600">
+                        <i class="fa fa-copy mr-2"></i>
+                        <span id="copyBtnText">Salin Semua</span>
+                    </button>
+                    <div id="copyAlert" class="hidden ml-3 flex items-center text-secondary">
+                        <i class="fa fa-check-circle mr-1"></i>
+                        <span>Tersalin!</span>
+                    </div>
+                </div>
+                <div id="fileContent" class="border border-gray-200 dark:border-gray-600 rounded-md p-4 bg-gray-50 dark:bg-gray-700 overflow-auto max-h-[60vh] transition-all duration-300">
+                    <!-- Isi file akan dimuat di sini -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white shadow-inner mt-12 py-4 dark:bg-gray-800 dark:shadow-gray-700/30 transition-all duration-300">
+        <div class="container mx-auto px-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+            <p>&copy; 2024 File Viewer - Dibuat dengan Tailwind CSS & JavaScript</p>
+        </div>
+    </footer>
+
+    <script>
+        // Inisialisasi Highlight.js
+    /*    hljs.highlightAll();   */
+
+        // Elemen DOM
+        const fileListSection = document.getElementById('fileListSection');
+        const fileContentViewSection = document.getElementById('fileContentViewSection');
+        const backBtn = document.getElementById('backBtn');
+        const viewFileBtns = document.querySelectorAll('.view-file-btn');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileContent = document.getElementById('fileContent');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyBtnText = document.getElementById('copyBtnText');
+        const copyAlert = document.getElementById('copyAlert');
+        const searchFileInput = document.getElementById('searchFileInput');
+        const fileGrid = document.getElementById('fileGrid');
+        const noFileFound = document.getElementById('noFileFound');
+        const fileTypeBadge = document.getElementById('fileTypeBadge');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeIconDark = document.getElementById('themeIconDark');
+
+        // Fitur 4: Dark/Light Mode Toggle
+        function initTheme() {
+            // Ambil preferensi tema dari localStorage (jika ada)
+            const savedTheme = localStorage.getItem('fileViewerTheme');
+            const isDarkMode = savedTheme === 'dark' || (savedTheme === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+            // Terapkan tema
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                fileContent.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                fileContent.classList.remove('dark');
+            }
+        }
+
+        // Toggle tema saat tombol diklik
+        themeToggleBtn.addEventListener('click', () => {
+            const isDarkMode = document.documentElement.classList.toggle('dark');
+            fileContent.classList.toggle('dark', isDarkMode);
+
+            // Simpan preferensi tema ke localStorage
+            localStorage.setItem('fileViewerTheme', isDarkMode ? 'dark' : 'light');
+            
+            
+                        // Update ikon tombol (otomatis diatur oleh Tailwind, tapi tambah konfirmasi)
+            if (isDarkMode) {
+                themeIcon.classList.add('hidden');
+                themeIconDark.classList.remove('hidden');
+            } else {
+                themeIcon.classList.remove('hidden');
+                themeIconDark.classList.add('hidden');
+            }
+
+            // Highlight ulang kode di MD saat tema berubah (agar sesuai warna)
+            if (fileContent.classList.contains('markdown-view')) {
+                hljs.highlightAll();
+            }
+        });
+
+        // Fitur 1: Pencarian File
+        searchFileInput.addEventListener('input', () => {
+            const searchTerm = searchFileInput.value.toLowerCase().trim();
+            const fileCards = document.querySelectorAll('.file-card');
+            let foundCount = 0;
+
+            fileCards.forEach(card => {
+                const searchKeywords = card.dataset.search.toLowerCase();
+                if (searchTerm === '' || searchKeywords.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                    foundCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            noFileFound.classList.toggle('hidden', foundCount > 0);
+        });
+
+        // Fitur 2: Muat & Tampilkan Isi File (dengan Highlight Sintaks untuk MD)
+        async function loadFile(fileName) {
+            try {
+                const response = await fetch(fileName);
+                if (!response.ok) throw new Error('File tidak ditemukan');
+                
+                const content = await response.text();
+                fileNameDisplay.textContent = fileName;
+                
+                // Dapatkan tipe file dan tampilkan badge (sesuai tema)
+                const fileType = fileName.split('.').pop().toUpperCase();
+                fileTypeBadge.className = 'inline-block px-3 py-1 rounded-full text-sm font-medium';
+                
+                if (fileType === 'MD') {
+                    fileTypeBadge.textContent = `Markdown (${fileType})`;
+                    fileTypeBadge.classList.add('bg-primary/10', 'text-primary', 'dark:bg-primary/20');
+                } else if (fileType === 'TXT') {
+                    fileTypeBadge.textContent = `Teks (${fileType})`;
+                    fileTypeBadge.classList.add('bg-secondary/10', 'text-secondary', 'dark:bg-secondary/20');
+                }
+
+                // Tampilkan isi file (parse MD jika perlu)
+                if (fileType === 'MD') {
+                    marked.setOptions({
+                        highlight: (code, lang) => {
+                            return lang && hljs.getLanguage(lang) 
+                                ? hljs.highlight(code, { language: lang }).value 
+                                : hljs.highlightAuto(code).value;
+                        }
+                    });
+                    fileContent.innerHTML = marked.parse(content);
+                    fileContent.classList.add('markdown-view');
+                    // Tambah kelas tema ke fileContent agar styling MD sesuai
+                    fileContent.classList.toggle('dark', document.documentElement.classList.contains('dark'));
+                    hljs.highlightAll();
+                } else {
+                    fileContent.textContent = content;
+                    fileContent.classList.remove('markdown-view');
+                    fileContent.classList.toggle('dark', document.documentElement.classList.contains('dark'));
+                }
+
+                // Ubah tampilan ke bagian isi file
+                fileListSection.classList.add('hidden');
+                fileContentViewSection.classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                backBtn.classList.add('flex');
+            } catch (error) {
+                fileContent.textContent = `Error: ${error.message}`;
+                fileNameDisplay.textContent = 'Gagal Memuat File';
+                fileTypeBadge.textContent = 'Error';
+                fileTypeBadge.classList.add('bg-red-100', 'text-red-500', 'dark:bg-red-900/30', 'dark:text-red-400');
+            }
+        }
+
+        // Event listener untuk tombol lihat file
+        viewFileBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const fileCard = btn.closest('.file-card');
+                const fileName = fileCard.dataset.file;
+                loadFile(fileName);
+            });
+        });
+
+        // Event listener untuk tombol kembali
+        backBtn.addEventListener('click', () => {
+            fileContentViewSection.classList.add('hidden');
+            fileListSection.classList.remove('hidden');
+            backBtn.classList.add('hidden');
+            backBtn.classList.remove('flex');
+            fileTypeBadge.className = 'inline-block px-3 py-1 rounded-full text-sm font-medium';
+        });
+
+        // Fitur 3: Tombol Salin Isi File
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = fileContent.textContent;
+            
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    copyBtn.classList.add('btn-salin-active');
+                    copyBtnText.textContent = 'Tersalin!';
+                    copyAlert.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        copyBtn.classList.remove('btn-salin-active');
+                        copyBtnText.textContent = 'Salin Semua';
+                        copyAlert.classList.add('hidden');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Gagal menyalin:', err);
+                    alert('Gagal menyalin isi file');
+                });
+        });
+
+        // Inisialisasi tema saat halaman dimuat
+        initTheme();
+    </script>
+</body>
+</html>
