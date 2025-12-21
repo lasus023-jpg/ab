@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Viewer - Tampil & Salin Isi File</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // Konfigurasi Tailwind
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        dark: '#1D2129',
+                        light: '#F2F3F5'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .file-card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .btn-salin-active {
+                @apply bg-secondary text-white;
+            }
+        }
+    </style>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-inter bg-light text-dark min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-bold text-primary flex items-center">
+                <i class="fa fa-file-text-o mr-2"></i>
+                <span>File Viewer</span>
+            </h1>
+            <button id="backBtn" class="hidden items-center text-primary font-medium">
+                <i class="fa fa-arrow-left mr-1"></i>
+                <span>Kembali ke Daftar</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Bagian 1: Daftar Link File -->
+        <section id="fileListSection" class="block">
+            <h2 class="text-[clamp(1rem,2.5vw,1.5rem)] font-semibold mb-6 text-center">Daftar File Tersedia</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Kartu File (contoh) -->
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh1.md">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-code-o text-2xl text-primary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Contoh File MD</h3>
+                            <p class="text-sm text-gray-500">contoh1.md</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh2.txt">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-text-o text-2xl text-secondary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Contoh File TXT</h3>
+                            <p class="text-sm text-gray-500">contoh2.txt</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh3.md">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-code-o text-2xl text-primary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Panduan Pengguna</h3>
+                            <p class="text-sm text-gray-500">contoh3.md</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bagian 2: Tampilan Isi File -->
+        <section id="fileContentViewSection" class="hidden">
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 id="fileNameDisplay" class="text-[clamp(1rem,2.5vw,1.5rem)] font-semibold mb-4"></h2>
+                <div class="flex justify-end mb-4">
+                    <button id="copyBtn" class="flex items-center bg-gray-200 text-dark py-2 px-4 rounded-md font-medium transition-colors hover:bg-gray-300">
+                        <i class="fa fa-copy mr-2"></i>
+                        <span id="copyBtnText">Salin Semua</span>
+                    </button>
+                    <div id="copyAlert" class="hidden ml-3 flex items-center text-secondary">
+                        <i class="fa fa-check-circle mr-1"></i>
+                        <span>Tersalin!</span>
+                    </div>
+                </div>
+                <div id="fileContent" class="border border-gray-200 rounded-md p-4 bg-gray-50 overflow-auto max-h-[60vh] whitespace-pre-wrap">
+                    <!-- Isi file akan dimuat di sini -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white shadow-inner mt-12 py-4">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 File Viewer - Dibuat dengan Tailwind CSS & JavaScript</p>
+        </div>
+    </footer>
+
+    <script>
+        // Elemen DOM
+        const fileListSection = document.getElementById('fileListSection');
+        const fileContentViewSection = document.getElementById('fileContentViewSection');
+        const backBtn = document.getElementById('backBtn');
+        const viewFileBtns = document.querySelectorAll('.view-file-btn');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileContent = document.getElementById('fileContent');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyBtnText = document.getElementById('copyBtnText');
+        const copyAlert = document.getElementById('copyAlert');
+
+        // Fungsi untuk menampilkan isi file
+        async function loadFile(fileName) {
+            try {
+                // Simulasi pemanggilan file (ganti dengan path filemu)
+                const response = await fetch(fileName);
+                if (!response.ok) throw new Error('File tidak ditemukan');
+                
+                const content = await response.text();
+                fileNameDisplay.textContent = fileName;
+                fileContent.textContent = content;
+
+                // Ubah tampilan ke bagian isi file
+                fileListSection.classList.add('hidden');
+                fileContentViewSection.classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                backBtn.classList.add('flex');
+            } catch (error) {
+                fileContent.textContent = `Error: ${error.message}`;
+                fileNameDisplay.textContent = 'Gagal Memuat File';
+            }
+        }
+
+        // Event listener untuk tombol lihat file
+        viewFileBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const fileCard = btn.closest('.file-card');
+                const fileName = fileCard.dataset.file;
+                loadFile(fileName);
+            });
+        });
+
+        // Event listener untuk tombol kembali
+        backBtn.addEventListener('click', () => {
+            fileContentViewSection.classList.add('hidden');
+            fileListSection.classList.remove('hidden');
+            backBtn.classList.add('hidden');
+            backBtn.classList.remove('flex');
+        });
+
+        // Fungsi untuk menyalin isi file
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(fileContent.textContent)
+                .then(() => {
+                    // Tampilkan pesan sukses
+                    copyBtn.classList.add('btn-salin-active');
+                    copyBtnText.textContent = 'Tersalin!';
+                    copyAlert.classList.remove('hidden');
+
+                    // Kembalikan ke keadaan semula setelah 2 detik
+                    setTimeout(() => {
+                        copyBtn.classList.remove('btn-salin-active');
+                        copyBtnText.textContent = 'Salin Semua';
+                        copyAlert.classList.add('hidden');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Gagal menyalin:', err);
+                    alert('Gagal menyalin isi file');
+                });
+        });
+    </script>
+</body>
+</html>
