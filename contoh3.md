@@ -3,7 +3,7 @@
 Ini adalah contoh kode yang akan disorot:
 
 ## Kode HTML
-```html
+
 <!DOCTYPE html>
 <html>
 <head>
