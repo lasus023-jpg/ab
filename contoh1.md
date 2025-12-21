@@ -1,0 +1,1 @@
+Unique AI facial expression effects mapped onto a 3D anthropomorphic banana character. 3D cartoon style full of action. In a banana garden.
