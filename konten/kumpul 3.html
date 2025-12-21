@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kumpulan Cerita</title>
+  <style>
+    :root {
+      --bg-light: #f9fafb;
+      --text-light: #111827;
+      --bg-dark: #111827;
+      --text-dark: #f9fafb;
+      --accent: #3b82f6;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: background-color 0.3s, color 0.3s;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    body.dark {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    button, input[type="file"] {
+      background: none;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: inherit;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      max-width: 900px;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+      margin-bottom: 1rem;
+    }
+
+    .upload-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 900px;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    select {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    .stories {
+      margin-top: 0.5rem;
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .story {
+      padding: 1rem;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.05);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    body.dark .story {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .story:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .story h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+
+    .story small {
+      color: gray;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    mark {
+      background-color: var(--accent);
+      color: white;
+      padding: 0 2px;
+      border-radius: 3px;
+    }
+
+    .reader {
+      display: none;
+      max-width: 900px;
+      text-align: left;
+    }
+
+    .reader.active {
+      display: block;
+    }
+
+    .back-btn {
+      background: none;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .upload-bar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kumpulan Cerita</h1>
+    <button id="toggleMode">🌙 Mode Gelap</button>
+  </header>
+
+  <div class="upload-bar">
+    <div>
+      <input type="file" id="fileUpload" accept=".txt,.md" multiple />
+      <button id="clearStorage">🗑️ Hapus Semua</button>
+    </div>
+    <select id="folderFilter">
+      <option value="all">📁 Semua Folder</option>
+    </select>
+  </div>
+
+  <input type="text" id="search" placeholder="Cari kata atau judul..." />
+
+  <div class="stories" id="storyList"></div>
+
+  <div class="reader" id="reader">
+    <button class="back-btn">⬅ Kembali</button>
+    <h2 id="readerTitle"></h2>
+    <p id="readerContent"></p>
+  </div>
+
+  <script>
+    const body = document.body;
+    const toggleBtn = document.getElementById("toggleMode");
+    const searchInput = document.getElementById("search");
+    const storyList = document.getElementById("storyList");
+    const reader = document.getElementById("reader");
+    const readerTitle = document.getElementById("readerTitle");
+    const readerContent = document.getElementById("readerContent");
+    const backBtn = document.querySelector(".back-btn");
+    const fileUpload = document.getElementById("fileUpload");
+    const clearBtn = document.getElementById("clearStorage");
+    const folderFilter = document.getElementById("folderFilter");
+
+    const STORAGE_KEY = "kumpulan_cerita_data_v2";
+    const DARK_KEY = "kumpulan_cerita_darkmode";
+    const LAST_READ_KEY = "kumpulan_cerita_lastread";
+
+    let stories = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    let activeFolder = "all";
+
+    if (localStorage.getItem(DARK_KEY) === "true") {
+      body.classList.add("dark");
+      toggleBtn.textContent = "☀️ Mode Terang";
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      body.classList.toggle("dark");
+      const dark = body.classList.contains("dark");
+      toggleBtn.textContent = dark ? "☀️ Mode Terang" : "🌙 Mode Gelap";
+      localStorage.setItem(DARK_KEY, dark);
+    });
+
+    function renderFolders() {
+      const folders = [...new Set(stories.map(s => s.folder || "Lainnya"))];
+      folderFilter.innerHTML = '<option value="all">📁 Semua Folder</option>';
+      folders.forEach(folder => {
+        const opt = document.createElement("option");
+        opt.value = folder;
+        opt.textContent = folder;
+        folderFilter.appendChild(opt);
+      });
+    }
+
+    function renderStories(filter = "") {
+      storyList.innerHTML = "";
+      const query = filter.toLowerCase();
+      let filtered = stories.filter(
+        s =>
+          (activeFolder === "all" || s.folder === activeFolder) &&
+          (s.title.toLowerCase().includes(query) || s.content.toLowerCase().includes(query))
+      );
+
+      if (filtered.length === 0) {
+        storyList.innerHTML = "<p style='text-align:center;color:gray;'>Tidak ada cerita ditemukan.</p>";
+        return;
+      }
+
+      filtered.forEach(story => {
+        const div = document.createElement("div");
+        div.className = "story";
+        const title = highlightText(story.title, query);
+        const content = highlightText(story.content.slice(0, 120) + "...", query);
+        div.innerHTML = `<small>${story.folder || "Lainnya"}</small><h2>${title}</h2><p>${content}</p>`;
+        div.addEventListener("click", () => openReader(story));
+        storyList.appendChild(div);
+      });
+    }
+
+    function highlightText(text, query) {
+      if (!query) return text;
+      const regex = new RegExp(`(${query})`, "gi");
+      return text.replace(regex, "<mark>$1</mark>");
+    }
+
+    function openReader(story) {
+      storyList.style.display = "none";
+      searchInput.style.display = "none";
+      reader.classList.add("active");
+      readerTitle.textContent = story.title;
+      readerContent.innerHTML = story.content
+        .replace(/\n/g, "<br>")
+        .replace(/#+ (.+)/g, "<h3>$1</h3>"); // render markdown header
+      localStorage.setItem(LAST_READ_KEY, JSON.stringify(story));
+    }
+
+    backBtn.addEventListener("click", () => {
+      reader.classList.remove("active");
+      searchInput.style.display = "block";
+      storyList.style.display = "grid";
+    });
+
+    fileUpload.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target.result;
+          const folder = file.webkitRelativePath
+            ? file.webkitRelativePath.split("/")[0]
+            : (file.name.includes("_") ? file.name.split("_")[0] : "Lainnya");
+          const newStory = {
+            title: file.name.replace(/\.(txt|md)/, ""),
+            content,
+            folder
+          };
+          stories.push(newStory);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
+          renderFolders();
+          renderStories(searchInput.value);
+        };
+        reader.readAsText(file);
+      });
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (confirm("Hapus semua cerita dan data tersimpan?")) {
+        localStorage.clear();
+        stories = [];
+        renderStories();
+        renderFolders();
+      }
+    });
+
+    folderFilter.addEventListener("change", (e) => {
+      activeFolder = e.target.value;
+      renderStories(searchInput.value);
+    });
+
+    searchInput.addEventListener("input", e => renderStories(e.target.value));
+
+    const lastRead = JSON.parse(localStorage.getItem(LAST_READ_KEY));
+    if (lastRead) openReader(lastRead);
+
+    renderFolders();
+    renderStories();
+  </script>
+</body>
+</html>
