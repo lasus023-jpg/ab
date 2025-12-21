@@ -6,6 +6,10 @@
     <title>File Viewer - Tampil & Salin Isi File</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Library untuk Highlight Sintaks & Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
     <script>
         // Konfigurasi Tailwind
         tailwind.config = {
@@ -35,19 +39,48 @@
             .btn-salin-active {
                 @apply bg-secondary text-white;
             }
+            .search-input-focus {
+                @apply ring-2 ring-primary/30 outline-none;
+            }
         }
     </style>
     <!-- Font Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Penyesuaian tampilan Markdown yang diparsing */
+        #fileContent.markdown-view h1 { font-size: 1.8rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+        #fileContent.markdown-view h2 { font-size: 1.5rem; font-weight: 600; margin: 1.2rem 0 0.8rem; }
+        #fileContent.markdown-view h3 { font-size: 1.2rem; font-weight: 600; margin: 1rem 0 0.6rem; }
+        #fileContent.markdown-view p { margin: 0.8rem 0; line-height: 1.6; }
+        #fileContent.markdown-view ul, #fileContent.markdown-view ol { margin: 0.8rem 0 0.8rem 1.5rem; }
+        #fileContent.markdown-view li { margin: 0.4rem 0; }
+        #fileContent.markdown-view a { color: #165DFF; text-decoration: underline; }
+        #fileContent.markdown-view blockquote { border-left: 4px solid #36CFC9; padding-left: 0.8rem; margin: 0.8rem 0; color: #666; }
+        #fileContent.markdown-view code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+        #fileContent.markdown-view pre { background: #282c34; padding: 1rem; border-radius: 6px; margin: 1rem 0; overflow-x: auto; }
+        #fileContent.markdown-view pre code { background: transparent; padding: 0; color: #abb2bf; }
+    </style>
 </head>
 <body class="font-inter bg-light text-dark min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-bold text-primary flex items-center">
                 <i class="fa fa-file-text-o mr-2"></i>
                 <span>File Viewer</span>
             </h1>
+            
+            <!-- Fitur Pencarian File -->
+            <div class="w-full md:w-auto relative w-full max-w-md">
+                <input 
+                    type="text" 
+                    id="searchFileInput" 
+                    placeholder="Cari nama file atau tipe..." 
+                    class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 transition-all focus:search-input-focus"
+                >
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+            
             <button id="backBtn" class="hidden items-center text-primary font-medium">
                 <i class="fa fa-arrow-left mr-1"></i>
                 <span>Kembali ke Daftar</span>
@@ -59,13 +92,20 @@
         <!-- Bagian 1: Daftar Link File -->
         <section id="fileListSection" class="block">
             <h2 class="text-[clamp(1rem,2.5vw,1.5rem)] font-semibold mb-6 text-center">Daftar File Tersedia</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Pesan Jika Tidak Ada File Ditemukan Saat Pencarian -->
+            <div id="noFileFound" class="hidden text-center py-12 text-gray-500">
+                <i class="fa fa-folder-open-o text-4xl mb-3"></i>
+                <p>Tidak ada file yang cocok dengan pencarianmu</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="fileGrid">
                 <!-- Kartu File (contoh) -->
-                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh1.md">
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh1.md" data-search="contoh1 md markdown panduan dasar">
                     <div class="flex items-center mb-3">
                         <i class="fa fa-file-code-o text-2xl text-primary mr-3"></i>
                         <div>
-                            <h3 class="font-medium">Contoh File MD</h3>
+                            <h3 class="font-medium">Panduan Dasar MD</h3>
                             <p class="text-sm text-gray-500">contoh1.md</p>
                         </div>
                     </div>
@@ -74,11 +114,11 @@
                     </button>
                 </div>
 
-                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh2.txt">
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh2.txt" data-search="contoh2 txt teks catatan harian">
                     <div class="flex items-center mb-3">
                         <i class="fa fa-file-text-o text-2xl text-secondary mr-3"></i>
                         <div>
-                            <h3 class="font-medium">Contoh File TXT</h3>
+                            <h3 class="font-medium">Catatan Harian</h3>
                             <p class="text-sm text-gray-500">contoh2.txt</p>
                         </div>
                     </div>
@@ -87,12 +127,25 @@
                     </button>
                 </div>
 
-                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh3.md">
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh3.md" data-search="contoh3 md markdown kode javascript html">
                     <div class="flex items-center mb-3">
                         <i class="fa fa-file-code-o text-2xl text-primary mr-3"></i>
                         <div>
-                            <h3 class="font-medium">Panduan Pengguna</h3>
+                            <h3 class="font-medium">Contoh Kode di MD</h3>
                             <p class="text-sm text-gray-500">contoh3.md</p>
+                        </div>
+                    </div>
+                    <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
+                        Lihat Isi
+                    </button>
+                </div>
+
+                <div class="file-card bg-white rounded-lg p-5 shadow file-card-hover" data-file="contoh4.txt" data-search="contoh4 txt teks daftar belanja">
+                    <div class="flex items-center mb-3">
+                        <i class="fa fa-file-text-o text-2xl text-secondary mr-3"></i>
+                        <div>
+                            <h3 class="font-medium">Daftar Belanja</h3>
+                            <p class="text-sm text-gray-500">contoh4.txt</p>
                         </div>
                     </div>
                     <button class="view-file-btn w-full bg-primary text-white py-2 rounded-md font-medium transition-colors hover:bg-primary/90">
@@ -106,17 +159,18 @@
         <section id="fileContentViewSection" class="hidden">
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <h2 id="fileNameDisplay" class="text-[clamp(1rem,2.5vw,1.5rem)] font-semibold mb-4"></h2>
-                <div class="flex justify-end mb-4">
-                    <button id="copyBtn" class="flex items-center bg-gray-200 text-dark py-2 px-4 rounded-md font-medium transition-colors hover:bg-gray-300">
+                <div class="flex flex-col sm:flex-row sm:justify-end gap-3 mb-4">
+                    <span id="fileTypeBadge" class="inline-block px-3 py-1 rounded-full text-sm font-medium self-end sm:self-auto"></span>
+                    <button id="copyBtn" class="flex items-center justify-center bg-gray-200 text-dark py-2 px-4 rounded-md font-medium transition-colors hover:bg-gray-300">
                         <i class="fa fa-copy mr-2"></i>
                         <span id="copyBtnText">Salin Semua</span>
                     </button>
-                    <div id="copyAlert" class="hidden ml-3 flex items-center text-secondary">
+                    <div id="copyAlert" class="hidden ml-3 flex items-center text-secondary self-end sm:self-auto">
                         <i class="fa fa-check-circle mr-1"></i>
                         <span>Tersalin!</span>
                     </div>
                 </div>
-                <div id="fileContent" class="border border-gray-200 rounded-md p-4 bg-gray-50 overflow-auto max-h-[60vh] whitespace-pre-wrap">
+                <div id="fileContent" class="border border-gray-200 rounded-md p-4 bg-gray-50 overflow-auto max-h-[60vh]">
                     <!-- Isi file akan dimuat di sini -->
                 </div>
             </div>
@@ -130,6 +184,9 @@
     </footer>
 
     <script>
+        // Inisialisasi Highlight.js
+        hljs.highlightAll();
+
         // Elemen DOM
         const fileListSection = document.getElementById('fileListSection');
         const fileContentViewSection = document.getElementById('fileContentViewSection');
@@ -140,17 +197,68 @@
         const copyBtn = document.getElementById('copyBtn');
         const copyBtnText = document.getElementById('copyBtnText');
         const copyAlert = document.getElementById('copyAlert');
+        const searchFileInput = document.getElementById('searchFileInput');
+        const fileGrid = document.getElementById('fileGrid');
+        const noFileFound = document.getElementById('noFileFound');
+        const fileTypeBadge = document.getElementById('fileTypeBadge');
 
-        // Fungsi untuk menampilkan isi file
+        // Fitur 1: Pencarian File
+        searchFileInput.addEventListener('input', () => {
+            const searchTerm = searchTerm = searchFileInput.value.toLowerCase().trim();
+            const fileCards = document.querySelectorAll('.file-card');
+            let foundCount = 0;
+
+            fileCards.forEach(card => {
+                const searchKeywords = card.dataset.search.toLowerCase();
+                if (searchTerm === '' || searchKeywords.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                    foundCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Tampilkan pesan jika tidak ada file ditemukan
+            noFileFound.classList.toggle('hidden', foundCount > 0);
+        });
+
+        // Fitur 2: Muat & Tampilkan Isi File (dengan Highlight Sintaks untuk MD)
         async function loadFile(fileName) {
             try {
-                // Simulasi pemanggilan file (ganti dengan path filemu)
                 const response = await fetch(fileName);
                 if (!response.ok) throw new Error('File tidak ditemukan');
                 
                 const content = await response.text();
                 fileNameDisplay.textContent = fileName;
-                fileContent.textContent = content;
+                
+                // Dapatkan tipe file dan tampilkan badge
+                const fileType = fileName.split('.').pop().toUpperCase();
+                if (fileType === 'MD') {
+                    fileTypeBadge.textContent = `Markdown (${fileType})`;
+                    fileTypeBadge.classList.add('bg-primary/10', 'text-primary');
+                } else if (fileType === 'TXT') {
+                    fileTypeBadge.textContent = `Teks (${fileType})`;
+                    fileTypeBadge.classList.add('bg-secondary/10', 'text-secondary');
+                }
+
+                // Tampilkan isi file (parse MD jika perlu)
+                if (fileType === 'MD') {
+                    // Parse Markdown ke HTML dan aktifkan highlight sintaks
+                    marked.setOptions({
+                        highlight: (code, lang) => {
+                            return lang && hljs.getLanguage(lang) 
+                                ? hljs.highlight(code, { language: lang }).value 
+                                : hljs.highlightAuto(code).value;
+                        }
+                    });
+                    fileContent.innerHTML = marked.parse(content);
+                    fileContent.classList.add('markdown-view');
+                    hljs.highlightAll(); // Highlight ulang kode di dalam MD
+                } else {
+                    // Tampilkan sebagai teks biasa untuk file lain
+                    fileContent.textContent = content;
+                    fileContent.classList.remove('markdown-view');
+                }
 
                 // Ubah tampilan ke bagian isi file
                 fileListSection.classList.add('hidden');
@@ -160,6 +268,8 @@
             } catch (error) {
                 fileContent.textContent = `Error: ${error.message}`;
                 fileNameDisplay.textContent = 'Gagal Memuat File';
+                fileTypeBadge.textContent = 'Error';
+                fileTypeBadge.classList.add('bg-red-100', 'text-red-500');
             }
         }
 
@@ -178,18 +288,21 @@
             fileListSection.classList.remove('hidden');
             backBtn.classList.add('hidden');
             backBtn.classList.remove('flex');
+            // Kosongkan badge tipe file untuk sesi berikutnya
+            fileTypeBadge.className = 'inline-block px-3 py-1 rounded-full text-sm font-medium';
         });
 
-        // Fungsi untuk menyalin isi file
+        // Fitur 3: Tombol Salin Isi File (berlaku untuk MD dan TXT)
         copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(fileContent.textContent)
+            // Ambil teks mentah (tanpa HTML) untuk salinan
+            const textToCopy = fileContent.textContent;
+            
+            navigator.clipboard.writeText(textToCopy)
                 .then(() => {
-                    // Tampilkan pesan sukses
                     copyBtn.classList.add('btn-salin-active');
                     copyBtnText.textContent = 'Tersalin!';
                     copyAlert.classList.remove('hidden');
 
-                    // Kembalikan ke keadaan semula setelah 2 detik
                     setTimeout(() => {
                         copyBtn.classList.remove('btn-salin-active');
                         copyBtnText.textContent = 'Salin Semua';
