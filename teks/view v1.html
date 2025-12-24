@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="in">
+<head>
+    <meta charset="UTF-8">
+    <title>Judul halaman</title>
+</head>
+<body>
+    
+    <div id="bab-1-container"></div>
+    
+    <script>
+        
+        
+        <!-- Fungsi untuk memuat file TXT -->
+       
+function muatTXT(namaFile, idContainer) {
+  fetch(namaFile)
+    .then(response => {
+      if (!response.ok) throw new Error("File tidak ditemukan");
+      return response.text();
+    })
+    .then(teks => {
+      document.getElementById(idContainer).innerText = teks;
+    })
+    .catch(error => console.log(error));
+}
+
+
+// Panggil fungsi untuk memuat bab 1 (misal file bernama bab1.txt)
+
+
+muatTXT("bab1.txt", "bab-1-container");
+ 
+        
+        
+        
+    </script>
+</body>
+</html>
