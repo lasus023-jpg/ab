@@ -1,0 +1,89 @@
+        
+        /* Variabel warna default (mode terang) */
+:root {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --button-bg: #4CAF50;
+    --button-text: #ffffff;
+}
+
+/* Variabel warna untuk mode gelap */
+body.dark-mode {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --button-bg: #2196F3;
+    --button-text: #ffffff;
+}
+
+/* Gaya dasar halaman */
+body {
+    margin: 0;
+    padding: 0rem;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease; /* Animasi perpindahan */
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+/* Deteksi preferensi sistem (jika belum ada pengaturan pengguna) */
+@media (prefers-color-scheme: dark) {
+    body:not(.light-mode) {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --button-bg: #2196F3;
+    }
+}
+
+
+
+ 
+  
+        
+        /* Styling Preview */
+        .bab-box {
+            margin-top: 10px;
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            font-family: MERRIWEATHER;
+            font-size: 0.95em;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            border-left: 5px solid var(--accent);
+        }
+
+
+       
+        
+        
+         /* Header */
+        header {
+            
+            
+          padding: 1.5rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+        
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+ 
+       
+       

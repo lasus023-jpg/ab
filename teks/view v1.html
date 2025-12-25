@@ -2,38 +2,109 @@
 <html lang="in">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Judul halaman</title>
+   
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&family=Inter&family=Roboto+Mono&display=swap" rel="stylesheet">
+    
+   <link rel="stylesheet" href="style.css">
+   
+   
+   
+   
+   <script src="script.js"></script>
+   
+   
 </head>
 <body>
     
-    <div id="bab-1-container"></div>
+   
+<header>
+<div class="header-content">
+   <!-- Kotak search -->
+<input class ="content" type="text" id="search-input" placeholder="Cari kata kunci...">
+</div>
+<button class="content" onclick="cariTeks()">STABILO</button>
+
+<button id="toggleMode">tets</button>
+
+</div>
+</header>
+
+
+
+
+
+
+<!-- Kontainer bab (misal yang udah ada sebelumnya) -->
+<div class="bab-box"id="bab-1-container">file kosong</div>
+
+<div class="bab-box"id="bab-2-container">file kosong</div> 
+
+<div class="bab-box"id="bab-3-container">file kosong</div> 
+
+<!-- Tambah jika ada bab lain -->
+
+<br>
+
+
+
+
+<script>
     
-    <script>
-        
-        
-        <!-- Fungsi untuk memuat file TXT -->
-       
-function muatTXT(namaFile, idContainer) {
-  fetch(namaFile)
-    .then(response => {
-      if (!response.ok) throw new Error("File tidak ditemukan");
-      return response.text();
-    })
-    .then(teks => {
-      document.getElementById(idContainer).innerText = teks;
-    })
-    .catch(error => console.log(error));
+    // Dapatkan elemen tombol dan body
+const toggleButton = document.getElementById('toggleMode');
+const body = document.body;
+
+// Fungsi untuk memuat pengaturan dari localStorage
+function loadMode() {
+    const savedMode = localStorage.getItem('themeMode');
+    if (savedMode === 'dark') {
+        enableDarkMode();
+    } else if (savedMode === 'light') {
+        enableLightMode();
+    } else {
+        // Gunakan preferensi sistem jika tidak ada pengaturan
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            enableDarkMode();
+        } else {
+            enableLightMode();
+        }
+    }
 }
 
+// Fungsi untuk mengaktifkan mode gelap
+function enableDarkMode() {
+    body.classList.add('dark-mode');
+    body.classList.remove('light-mode');
+    toggleButton.textContent = 'Ganti ke Mode Terang';
+    localStorage.setItem('themeMode', 'dark');
+}
 
-// Panggil fungsi untuk memuat bab 1 (misal file bernama bab1.txt)
+// Fungsi untuk mengaktifkan mode terang
+function enableLightMode() {
+    body.classList.remove('dark-mode');
+    body.classList.add('light-mode');
+    toggleButton.textContent = 'Ganti ke Mode Gelap';
+    localStorage.setItem('themeMode', 'light');
+}
+
+// Tambahkan event listener pada tombol
+toggleButton.addEventListener('click', () => {
+    if (body.classList.contains('dark-mode')) {
+        enableLightMode();
+    } else {
+        enableDarkMode();
+    }
+});
+
+// Muat pengaturan saat halaman dimulai
+loadMode();
+
+</script>
 
 
-muatTXT("bab1.txt", "bab-1-container");
- 
-        
-        
-        
-    </script>
+    
+    
 </body>
 </html>
